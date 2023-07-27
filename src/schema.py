@@ -90,5 +90,7 @@ class ApplicationDelete(BaseModel):
             return {"discord_id": self.discord_id}
         elif self.email and not self.telegram_id and not self.discord_id:
             return {"email": self.email}
+        elif not self.email and not self.discord_id and not self.telegram_id:
+            raise HTTPException(status_code=422, detail="There are no fields to check")
         else:
-            raise HTTPException(status_code=500, detail="Something gone wrong")
+            raise HTTPException(status_code=500, detail="There are more than 1 field")

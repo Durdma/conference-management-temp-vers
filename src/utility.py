@@ -162,6 +162,42 @@ def update_record_by_id(record_id: int, body: ApplicationUpdate, sheet: Workshee
             raise HTTPException(status_code=403, detail="Nor telegram_id nor discord_id nor email are not equal")
 
 
+def update_record_by_id_v2(record_id: int, body: ApplicationUpdate, sheet: Worksheet) -> Application:
+    record: Optional[Application] = find_record_by_id(record_id, sheet)
+    body.updated_at = datetime.now().astimezone().isoformat()
+    coauthors_json = json.dumps(body.coauthors, ensure_ascii=False)
+    
+    if record:
+        if record.telegram_id == body.telegram_id:
+            pass
+        elif record.discord_id == body.discord_id:
+            pass
+        elif record.email == body.email:
+            pass
+        else:
+            raise HTTPException(status_code=403, detail="Nor telegram_id nor discord_id nor email are not equal")
+        
+        body.telegram_id = record.telegram_id
+        body.discord_id = record.discord_id
+        body.email = record.email
+
+        data = list(body.model_dump().values())
+        data[data.index(body.coauthors)] = coauthors_json
+
+        record = list(record.model_dump().values())
+        values_range = sheet.range(record_id+1, 2, record_id+1, 1 + len(data))
+
+        for i, (update_value, value) in enumerate(zip(data, record)):
+                if update_value == "null":
+                    values_range[i].value = value
+                else:
+                    values_range[i].value = update_value
+
+        sheet.update_cells(values_range)
+
+        return find_record_by_id(record_id, sheet)
+
+
 def next_available_row(sheet: Worksheet):
     """
     Осуществляет поиск следующей свободной строки
